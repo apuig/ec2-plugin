@@ -2011,11 +2011,7 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
 
         InstanceNetworkInterfaceSpecification.Builder netBuilder = InstanceNetworkInterfaceSpecification.builder();
         if (StringUtils.isNotBlank(subnetId)) {
-            if (getAssociatePublicIp()) {
-                netBuilder.subnetId(subnetId);
-            } else {
-                riRequestBuilder.subnetId(subnetId);
-            }
+            netBuilder.subnetId(subnetId);
 
             diFilters.add(Filter.builder().name("subnet-id").values(subnetId).build());
 
@@ -2026,11 +2022,7 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
                 List<String> groupIds = getEc2SecurityGroups(ec2);
 
                 if (!groupIds.isEmpty()) {
-                    if (getAssociatePublicIp()) {
-                        netBuilder.groups(groupIds);
-                    } else {
-                        riRequestBuilder.securityGroupIds(groupIds);
-                    }
+                    netBuilder.groups(groupIds);
 
                     diFilters.add(Filter.builder()
                             .name("instance.group-id")
@@ -2042,11 +2034,8 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
             List<String> groupIds = getSecurityGroupsBy("group-name", securityGroupSet, ec2).securityGroups().stream()
                     .map(SecurityGroup::groupId)
                     .collect(Collectors.toList());
-            if (getAssociatePublicIp()) {
-                netBuilder.groups(groupIds);
-            } else {
-                riRequestBuilder.securityGroups(securityGroupSet);
-            }
+            netBuilder.groups(groupIds);
+
             if (!groupIds.isEmpty()) {
                 diFilters.add(Filter.builder()
                         .name("instance.group-id")
@@ -2055,12 +2044,11 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
             }
         }
 
+        // never inherit form subnet
         netBuilder.associatePublicIpAddress(getAssociatePublicIp());
-        netBuilder.deviceIndex(0);
 
-        if (getAssociatePublicIp()) {
-            riRequestBuilder.networkInterfaces(netBuilder.build());
-        }
+        netBuilder.deviceIndex(0);
+        riRequestBuilder.networkInterfaces(netBuilder.build());
 
         HashSet<Tag> instTags = buildTags(EC2Cloud.EC2_SLAVE_TYPE_DEMAND);
         for (Tag tag : instTags) {
